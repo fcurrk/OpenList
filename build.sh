@@ -409,9 +409,6 @@ BuildReleaseLinuxMusl() {
     export CGO_ENABLED=1
     go build -o ./build/$appName-$os_arch -ldflags="$muslflags" -tags=jsoniter .
   done
-  cd build
-  find . -type f -print0 | xargs -0 md5sum >md5.txt
-  cat md5.txt
 }
 
 BuildReleaseLinuxMuslArm() {
@@ -441,9 +438,6 @@ BuildReleaseLinuxMuslArm() {
     export GOARM=${arm}
     go build -o ./build/$appName-$os_arch -ldflags="$muslflags" -tags=jsoniter .
   done
-  cd build
-  find . -type f -print0 | xargs -0 md5sum >md5.txt
-  cat md5.txt
 }
 
 
@@ -466,9 +460,6 @@ BuildReleaseAndroid() {
     go build -o ./build/$appName-android-$os_arch -ldflags="$ldflags" -tags=jsoniter .
     android-ndk-r26b/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip ./build/$appName-android-$os_arch
   done
-  cd build
-  find . -type f -print0 | xargs -0 md5sum >md5.txt
-  cat md5.txt
 }
 
 BuildReleaseFreeBSD() {
@@ -510,9 +501,6 @@ BuildReleaseFreeBSD() {
     export CGO_LDFLAGS="-fuse-ld=lld"
     go build -o ./build/$appName-freebsd-$os_arch -ldflags="$ldflags" -tags=jsoniter .
   done
-  cd build
-  find . -type f -print0 | xargs -0 md5sum >md5.txt
-  cat md5.txt
 }
 
 MakeRelease() {

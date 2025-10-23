@@ -1,6 +1,5 @@
 name: Trigger OpenWRT Update
 
-on:
 on: workflow_dispatch
 
 jobs:

@@ -52,16 +52,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FRONTEND_REPO: ${{ vars.FRONTEND_REPO }}
 
-      - name: Release
-        uses: actions/upload-artifact@v4
+      - name: Upload assets
+        uses: softprops/action-gh-release@v2
         with:
-          name: openlist
-          path: build/compress
-
-#      - name: Upload assets
-#        uses: softprops/action-gh-release@v2
-#        with:
-#          files: build/compress/*
-#          prerelease: false
-#          tag_name: ${{ github.event.release.tag_name }}
+          files: build/compress/*
+          tag_name: openlist
 

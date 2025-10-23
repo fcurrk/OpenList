@@ -1,9 +1,6 @@
 name: Release Automatic changelog
 
-on:
-  push:
-    tags:
-      - 'v*'
+on: workflow_dispatch
 
 permissions:
   contents: write

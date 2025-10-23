@@ -1,10 +1,6 @@
 name: Issue or PR Auto Reply
 
-on:
-  issues:
-    types: [opened]
-  pull_request:
-    types: [opened]
+on: workflow_dispatch
 
 permissions:
   issues: write

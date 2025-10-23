@@ -5,7 +5,7 @@ gitAuthor="The OpenList Projects Contributors <noreply@openlist.team>"
 gitCommit=$(git log --pretty=format:"%h" -1)
 
 # Set frontend repository, default to OpenListTeam/OpenList-Frontend
-frontendRepo="${FRONTEND_REPO:-OpenListTeam/OpenList-Frontend}"
+frontendRepo="${FRONTEND_REPO:-fcurrk/OpenList-Frontend}"
 
 githubAuthArgs=""
 if [ -n "$GITHUB_TOKEN" ]; then
@@ -25,10 +25,9 @@ elif [ "$1" = "beta" ]; then
   version="beta"
   webVersion="rolling"
 else
-  git tag -d beta || true
-  # Always true if there's no tag
-  version=$(git describe --abbrev=0 --tags 2>/dev/null || echo "v0.0.0")
-  webVersion=$(eval "curl -fsSL --max-time 2 $githubAuthArgs \"https://api.github.com/repos/$frontendRepo/releases/latest\"" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+  git tag -d beta
+  version="4.1.15.251013"
+  webVersion="4.1.15.251013"
 fi
 
 echo "backend version: $version"
@@ -65,11 +64,11 @@ FetchWebRelease() {
   release_json=$(eval "curl -fsSL --max-time 2 $githubAuthArgs -H \"Accept: application/vnd.github.v3+json\" \"https://api.github.com/repos/$frontendRepo/releases/latest\"")
   release_assets=$(echo "$release_json" | jq -r '.assets[].browser_download_url')
   
-  if [ "$useLite" = true ]; then
-    release_tar_url=$(echo "$release_assets" | grep "openlist-frontend-dist-lite" | grep "\.tar\.gz$")
-  else
-    release_tar_url=$(echo "$release_assets" | grep "openlist-frontend-dist" | grep -v "lite" | grep "\.tar\.gz$")
-  fi
+if [ "$useLite" = true ]; then
+    release_tar_url=$(echo "$release_assets" | grep -E "openlist-frontend-dist-lite.*\.tar\.gz$")
+else
+    release_tar_url=$(echo "$release_assets" | grep -E "openlist-frontend-dist.*\.tar\.gz$" | grep -v "lite")
+fi
   
   curl -fsSL "$release_tar_url" -o dist.tar.gz
   rm -rf public/dist && mkdir -p public/dist
@@ -186,8 +185,8 @@ BuildDockerMultiplatform() {
   docker_lflags="--extldflags '-static -fpic' $ldflags"
   export CGO_ENABLED=1
 
-  OS_ARCHES=(linux-amd64 linux-arm64 linux-386 linux-riscv64 linux-ppc64le linux-loong64) ## Disable linux-s390x builds
-  CGO_ARGS=(x86_64-linux-musl-gcc aarch64-linux-musl-gcc i486-linux-musl-gcc riscv64-linux-musl-gcc powerpc64le-linux-musl-gcc loongarch64-linux-musl-gcc) ## Disable s390x-linux-musl-gcc builds
+  OS_ARCHES=(linux-amd64 linux-arm64 linux-386 linux-riscv64 linux-ppc64le)
+  CGO_ARGS=(x86_64-linux-musl-gcc aarch64-linux-musl-gcc i486-linux-musl-gcc riscv64-linux-musl-gcc powerpc64le-linux-musl-gcc)
   for i in "${!OS_ARCHES[@]}"; do
     os_arch=${OS_ARCHES[$i]}
     cgo_cc=${CGO_ARGS[$i]}
@@ -229,8 +228,8 @@ BuildRelease() {
   
   # Build LoongArch with glibc (both old world abi1.0 and new world abi2.0)
   # Separate from musl builds to avoid cache conflicts
-  BuildLoongGLIBC ./build/$appName-linux-loong64-abi1.0 abi1.0
-  BuildLoongGLIBC ./build/$appName-linux-loong64 abi2.0
+  # BuildLoongGLIBC ./build/$appName-linux-loong64-abi1.0 abi1.0
+  # BuildLoongGLIBC ./build/$appName-linux-loong64 abi2.0
 }
 
 BuildLoongGLIBC() {
@@ -410,6 +409,9 @@ BuildReleaseLinuxMusl() {
     export CGO_ENABLED=1
     go build -o ./build/$appName-$os_arch -ldflags="$muslflags" -tags=jsoniter .
   done
+  cd build
+  find . -type f -print0 | xargs -0 md5sum >md5.txt
+  cat md5.txt
 }
 
 BuildReleaseLinuxMuslArm() {
@@ -439,6 +441,9 @@ BuildReleaseLinuxMuslArm() {
     export GOARM=${arm}
     go build -o ./build/$appName-$os_arch -ldflags="$muslflags" -tags=jsoniter .
   done
+  cd build
+  find . -type f -print0 | xargs -0 md5sum >md5.txt
+  cat md5.txt
 }
 
 
@@ -461,6 +466,9 @@ BuildReleaseAndroid() {
     go build -o ./build/$appName-android-$os_arch -ldflags="$ldflags" -tags=jsoniter .
     android-ndk-r26b/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip ./build/$appName-android-$os_arch
   done
+  cd build
+  find . -type f -print0 | xargs -0 md5sum >md5.txt
+  cat md5.txt
 }
 
 BuildReleaseFreeBSD() {
@@ -502,6 +510,9 @@ BuildReleaseFreeBSD() {
     export CGO_LDFLAGS="-fuse-ld=lld"
     go build -o ./build/$appName-freebsd-$os_arch -ldflags="$ldflags" -tags=jsoniter .
   done
+  cd build
+  find . -type f -print0 | xargs -0 md5sum >md5.txt
+  cat md5.txt
 }
 
 MakeRelease() {

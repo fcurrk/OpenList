@@ -111,15 +111,21 @@ func UpdateIndex() {
 	favicon := setting.GetStr(conf.Favicon)
 	logo := strings.Split(setting.GetStr(conf.Logo), "\n")[0]
 	title := setting.GetStr(conf.SiteTitle)
+	sitebeian := setting.GetStr(conf.SiteBeian)
+	contactus := setting.GetStr(conf.ContactUs)
 	customizeHead := setting.GetStr(conf.CustomizeHead)
 	customizeBody := setting.GetStr(conf.CustomizeBody)
 	mainColor := setting.GetStr(conf.MainColor)
+	logotext := setting.GetStr(conf.LogoText)
 	utils.Log.Debug("Applying replacements for default pages...")
 	replaceMap1 := map[string]string{
-		"https://res.oplist.org/logo/logo.svg": favicon,
-		"https://res.oplist.org/logo/logo.png": logo,
+		"https://cdn.jsdelivr.net/gh/fcurrk/alist-web@main/images/logo.svg": favicon,
+		"https://cdn.jsdelivr.net/gh/fcurrk/alist-web@main/images/logo.png": logo,
 		"Loading...":                           title,
-		"main_color: undefined":                fmt.Sprintf("main_color: '%s'", mainColor),
+		"<!-- site beian -->":     sitebeian,
+		"<!-- contact us -->":     contactus,
+		"main_color: undefined": fmt.Sprintf("main_color: '%s'", mainColor),
+		"<!-- logo text -->":     logotext,
 	}
 	conf.ManageHtml = replaceStrings(conf.RawIndexHtml, replaceMap1)
 	utils.Log.Debug("Applying replacements for manage pages...")

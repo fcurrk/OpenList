@@ -14,7 +14,7 @@ type Addition struct {
 	APIAddress       string `json:"api_url_address" default:"https://api.oplist.org/googleui/renewapi"`
 	ClientID         string `json:"client_id"`
 	ClientSecret     string `json:"client_secret"`
-	ChunkSize        int64  `json:"chunk_size" type:"number" default:"5" help:"chunk size while uploading (unit: MB)"`
+	ChunkSize        int64  `json:"chunk_size" required:"true" type:"number" default:"5" help:"chunk size while uploading (unit: MB)"`
 	DisableDiskUsage bool   `json:"disable_disk_usage" default:"false"`
 }
 

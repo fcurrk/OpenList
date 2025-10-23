@@ -1,15 +1,7 @@
 name: Trigger OpenWRT Update
 
 on:
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag to trigger update for'
-        required: true
-        type: string
+on: workflow_dispatch
 
 jobs:
   trigger-makefile-update:

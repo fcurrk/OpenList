@@ -15,9 +15,11 @@ const (
 	Announcement = "announcement"
 	AllowIndexed = "allow_indexed"
 	AllowMounted = "allow_mounted"
+        SiteBeian    = "site_beian"
+        ContactUs    = "contact_us"
 	RobotsTxt    = "robots_txt"
-
-	Logo                           = "logo" // multi-lines text, L1: light, EOL: dark
+	Logo      = "logo"
+        LogoText  = "logo_text"
 	Favicon                        = "favicon"
 	MainColor                      = "main_color"
 	HideStorageDetails             = "hide_storage_details"

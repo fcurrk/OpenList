@@ -20,7 +20,7 @@ const (
 	ADMIN
 )
 
-const StaticHashSalt = "https://github.com/alist-org/alist"
+const StaticHashSalt = "https://github.com/fcurrk/alist"
 
 var LoginCache = cache.NewMemCache[int]()
 
@@ -190,5 +190,5 @@ func (u *User) WebAuthnCredentials() []webauthn.Credential {
 }
 
 func (u *User) WebAuthnIcon() string {
-	return "https://res.oplist.org/logo/logo.svg"
+	return "https://cdn.jsdelivr.net/gh/fcurrk/alist-web@main/images/logo.svg"
 }

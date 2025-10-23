@@ -99,7 +99,7 @@ func InitialSettings() []model.SettingItem {
 		{Key: conf.VERSION, Value: siteVersion, Type: conf.TypeString, Group: model.SITE, Flag: model.READONLY},
 		//{Key: conf.ApiUrl, Value: "", Type: conf.TypeString, Group: model.SITE},
 		//{Key: conf.BasePath, Value: "", Type: conf.TypeString, Group: model.SITE},
-		{Key: conf.SiteTitle, Value: "AList", Type: conf.TypeString, Group: model.SITE},
+		{Key: conf.SiteTitle, Value: "OpenList", Type: conf.TypeString, Group: model.SITE},
 		{Key: conf.SiteBeian, Value: "", Type: conf.TypeString, Group: model.SITE},
 		{Key: conf.ContactUs, Value: "", Type: conf.TypeString, Group: model.SITE},
 		{Key: conf.Announcement, Value: "### This is a announcement", Type: conf.TypeText, Group: model.SITE},

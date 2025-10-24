@@ -185,8 +185,8 @@ BuildDockerMultiplatform() {
   docker_lflags="--extldflags '-static -fpic' $ldflags"
   export CGO_ENABLED=1
 
-  OS_ARCHES=(linux-amd64 linux-arm64 linux-386 linux-riscv64 linux-ppc64le)
-  CGO_ARGS=(x86_64-linux-musl-gcc aarch64-linux-musl-gcc i486-linux-musl-gcc riscv64-linux-musl-gcc powerpc64le-linux-musl-gcc)
+  OS_ARCHES=(linux-amd64 linux-arm64 linux-386 linux-riscv64 linux-ppc64le linux-loong64) ## Disable linux-s390x builds
+  CGO_ARGS=(x86_64-linux-musl-gcc aarch64-linux-musl-gcc i486-linux-musl-gcc riscv64-linux-musl-gcc powerpc64le-linux-musl-gcc loongarch64-linux-musl-gcc) ## Disable s390x-linux-musl-gcc builds
   for i in "${!OS_ARCHES[@]}"; do
     os_arch=${OS_ARCHES[$i]}
     cgo_cc=${CGO_ARGS[$i]}
@@ -228,8 +228,8 @@ BuildRelease() {
   
   # Build LoongArch with glibc (both old world abi1.0 and new world abi2.0)
   # Separate from musl builds to avoid cache conflicts
-  # BuildLoongGLIBC ./build/$appName-linux-loong64-abi1.0 abi1.0
-  # BuildLoongGLIBC ./build/$appName-linux-loong64 abi2.0
+  BuildLoongGLIBC ./build/$appName-linux-loong64-abi1.0 abi1.0
+  BuildLoongGLIBC ./build/$appName-linux-loong64 abi2.0
 }
 
 BuildLoongGLIBC() {

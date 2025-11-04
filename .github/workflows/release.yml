@@ -12,7 +12,8 @@ jobs:
     strategy:
       matrix:
         build-type: [ 'standard', 'lite' ]
-        target-platform: [ '', 'android', 'freebsd', 'linux_musl', 'linux_musl_arm' ]
+#        target-platform: [ '', 'android', 'freebsd', 'linux_musl', 'linux_musl_arm' ]
+        target-platform: [ '', 'android', 'linux_musl', 'linux_musl_arm' ]
     steps:
 
       - name: Free Disk Space (Ubuntu)

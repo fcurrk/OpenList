@@ -150,7 +150,8 @@ BuildDev() {
     export CGO_ENABLED=1
     go build -o ./dist/$appName-$os_arch -ldflags="$muslflags" -tags=jsoniter .
   done
-  xgo -targets=windows/amd64,darwin/amd64,darwin/arm64 -out "$appName" -ldflags="$ldflags" -tags=jsoniter .
+#  xgo -targets=windows/amd64,darwin/amd64,darwin/arm64 -out "$appName" -ldflags="$ldflags" -tags=jsoniter .
+  xgo -targets=windows/amd64 -out "$appName" -ldflags="$ldflags" -tags=jsoniter .
   mv "$appName"-* dist
   cd dist
   # cp ./"$appName"-windows-amd64.exe ./"$appName"-windows-amd64-upx.exe
@@ -454,8 +455,10 @@ BuildReleaseAndroid() {
   wget https://dl.google.com/android/repository/android-ndk-r26b-linux.zip
   unzip android-ndk-r26b-linux.zip
   rm android-ndk-r26b-linux.zip
-  OS_ARCHES=(amd64 arm64 386 arm)
-  CGO_ARGS=(x86_64-linux-android24-clang aarch64-linux-android24-clang i686-linux-android24-clang armv7a-linux-androideabi24-clang)
+#  OS_ARCHES=(amd64 arm64 386 arm)
+  OS_ARCHES=(arm64 arm)
+#  CGO_ARGS=(x86_64-linux-android24-clang aarch64-linux-android24-clang i686-linux-android24-clang armv7a-linux-androideabi24-clang)
+  CGO_ARGS=(aarch64-linux-android24-clang armv7a-linux-androideabi24-clang)
   for i in "${!OS_ARCHES[@]}"; do
     os_arch=${OS_ARCHES[$i]}
     cgo_cc=$(realpath android-ndk-r26b/toolchains/llvm/prebuilt/linux-x86_64/bin/${CGO_ARGS[$i]})

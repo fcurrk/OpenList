@@ -223,7 +223,7 @@ BuildRelease() {
   mkdir -p "build"
   BuildWinArm64 ./build/"$appName"-windows-arm64.exe
   BuildWin7 ./build/"$appName"-windows7
-  xgo -out "$appName" -ldflags="$ldflags" -tags=jsoniter .
+  xgo --targets="windows/386,windows/amd64,linux/amd64,linux/386,linux/arm64,linux/arm-7,linux/arm-5" -out "$appName" -ldflags="$ldflags" -tags=jsoniter .
   # why? Because some target platforms seem to have issues with upx compression
   # upx -9 ./"$appName"-linux-amd64
   # cp ./"$appName"-windows-amd64.exe ./"$appName"-windows-amd64-upx.exe

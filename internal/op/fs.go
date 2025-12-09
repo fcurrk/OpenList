@@ -4,6 +4,7 @@ import (
 	"context"
 	stdpath "path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
@@ -13,6 +14,7 @@ import (
 	"github.com/OpenListTeam/OpenList/v4/internal/stream"
 	"github.com/OpenListTeam/OpenList/v4/pkg/singleflight"
 	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
@@ -50,11 +52,11 @@ func List(ctx context.Context, storage driver.Driver, path string, args model.Li
 			return nil, errors.Wrapf(err, "failed to list objs")
 		}
 		// set path
-		for _, f := range files {
-			if s, ok := f.(model.SetPath); ok && f.GetPath() == "" && dir.GetPath() != "" {
-				s.SetPath(stdpath.Join(dir.GetPath(), f.GetName()))
-			}
-		}
+		// for _, f := range files {
+		// 	if s, ok := f.(model.SetPath); ok && f.GetPath() == "" && dir.GetPath() != "" {
+		// 		s.SetPath(stdpath.Join(dir.GetPath(), f.GetName()))
+		// 	}
+		// }
 		// warp obj name
 		model.WrapObjsName(files)
 		// call hooks
@@ -71,8 +73,34 @@ func List(ctx context.Context, storage driver.Driver, path string, args model.Li
 		if !storage.Config().NoCache {
 			if len(files) > 0 {
 				log.Debugf("set cache: %s => %+v", key, files)
-				ttl := time.Minute * time.Duration(storage.GetStorage().CacheExpiration)
-				Cache.dirCache.SetWithTTL(key, newDirectoryCache(files), ttl)
+
+				ttl := storage.GetStorage().CacheExpiration
+
+				customCachePolicies := storage.GetStorage().CustomCachePolicies
+				if len(customCachePolicies) > 0 {
+					configPolicies := strings.Split(customCachePolicies, "\n")
+					for _, configPolicy := range configPolicies {
+						policy := strings.Split(strings.TrimSpace(configPolicy), ":")
+						if len(policy) != 2 {
+							log.Warnf("Malformed custom cache policy entry: %s in storage %s for path %s. Expected format: pattern:ttl", configPolicy, storage.GetStorage().MountPath, path)
+							continue
+						}
+						if match, err1 := doublestar.Match(policy[0], path); err1 != nil {
+							log.Warnf("Invalid glob pattern in custom cache policy: %s, error: %v", policy[0], err1)
+							continue
+						} else if !match {
+							continue
+						}
+
+						if configTtl, err1 := strconv.ParseInt(policy[1], 10, 64); err1 == nil {
+							ttl = int(configTtl)
+							break
+						}
+					}
+				}
+
+				duration := time.Minute * time.Duration(ttl)
+				Cache.dirCache.SetWithTTL(key, newDirectoryCache(files), duration)
 			} else {
 				log.Debugf("del cache: %s", key)
 				Cache.deleteDirectoryTree(key)
@@ -88,6 +116,37 @@ func Get(ctx context.Context, storage driver.Driver, path string) (model.Obj, er
 	path = utils.FixAndCleanPath(path)
 	log.Debugf("op.Get %s", path)
 
+	// is root folder
+	if path == "/" {
+		if getRooter, ok := storage.(driver.GetRooter); ok {
+			rootObj, err := getRooter.GetRoot(ctx)
+			if err != nil {
+				return nil, errors.WithMessage(err, "failed get root obj")
+			}
+			return &model.ObjWrapName{
+				Name: RootName,
+				Obj:  rootObj,
+			}, nil
+		}
+		switch r := storage.GetAddition().(type) {
+		case driver.IRootId:
+			return &model.Object{
+				ID:       r.GetRootId(),
+				Name:     RootName,
+				Modified: storage.GetStorage().Modified,
+				IsFolder: true,
+			}, nil
+		case driver.IRootPath:
+			return &model.Object{
+				Path:     r.GetRootPath(),
+				Name:     RootName,
+				Modified: storage.GetStorage().Modified,
+				IsFolder: true,
+			}, nil
+		}
+		return nil, errors.New("please implement GetRooter or IRootPath or IRootId interface")
+	}
+
 	// get the obj directly without list so that we can reduce the io
 	if g, ok := storage.(driver.Getter); ok {
 		obj, err := g.Get(ctx, path)
@@ -99,47 +158,6 @@ func Get(ctx context.Context, storage driver.Driver, path string) (model.Obj, er
 		}
 	}
 
-	// is root folder
-	if utils.PathEqual(path, "/") {
-		var rootObj model.Obj
-		if getRooter, ok := storage.(driver.GetRooter); ok {
-			obj, err := getRooter.GetRoot(ctx)
-			if err != nil {
-				return nil, errors.WithMessage(err, "failed get root obj")
-			}
-			rootObj = obj
-		} else {
-			switch r := storage.GetAddition().(type) {
-			case driver.IRootId:
-				rootObj = &model.Object{
-					ID:       r.GetRootId(),
-					Name:     RootName,
-					Size:     0,
-					Modified: storage.GetStorage().Modified,
-					IsFolder: true,
-				}
-			case driver.IRootPath:
-				rootObj = &model.Object{
-					Path:     r.GetRootPath(),
-					Name:     RootName,
-					Size:     0,
-					Modified: storage.GetStorage().Modified,
-					IsFolder: true,
-				}
-			default:
-				return nil, errors.Errorf("please implement IRootPath or IRootId or GetRooter method")
-			}
-		}
-		if rootObj == nil {
-			return nil, errors.Errorf("please implement IRootPath or IRootId or GetRooter method")
-		}
-		return &model.ObjWrapName{
-			Name: RootName,
-			Obj:  rootObj,
-		}, nil
-	}
-
-	// not root folder
 	dir, name := stdpath.Split(path)
 	files, err := List(ctx, storage, dir, model.ListArgs{})
 	if err != nil {
@@ -227,20 +245,23 @@ func Link(ctx context.Context, storage driver.Driver, path string, args model.Li
 }
 
 // Other api
-func Other(ctx context.Context, storage driver.Driver, args model.FsOtherArgs) (interface{}, error) {
+func Other(ctx context.Context, storage driver.Driver, args model.FsOtherArgs) (any, error) {
+	if storage.Config().CheckStatus && storage.GetStorage().Status != WORK {
+		return nil, errors.WithMessagef(errs.StorageNotInit, "storage status: %s", storage.GetStorage().Status)
+	}
+	o, ok := storage.(driver.Other)
+	if !ok {
+		return nil, errs.NotImplement
+	}
 	obj, err := GetUnwrap(ctx, storage, args.Path)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to get obj")
 	}
-	if o, ok := storage.(driver.Other); ok {
-		return o.Other(ctx, model.OtherArgs{
-			Obj:    obj,
-			Method: args.Method,
-			Data:   args.Data,
-		})
-	} else {
-		return nil, errs.NotImplement
-	}
+	return o.Other(ctx, model.OtherArgs{
+		Obj:    obj,
+		Method: args.Method,
+		Data:   args.Data,
+	})
 }
 
 var mkdirG singleflight.Group[any]
@@ -309,6 +330,9 @@ func Move(ctx context.Context, storage driver.Driver, srcPath, dstDirPath string
 		return errors.WithMessagef(errs.StorageNotInit, "storage status: %s", storage.GetStorage().Status)
 	}
 	srcPath = utils.FixAndCleanPath(srcPath)
+	if utils.PathEqual(srcPath, "/") {
+		return errors.New("move root folder is not allowed")
+	}
 	srcDirPath := stdpath.Dir(srcPath)
 	dstDirPath = utils.FixAndCleanPath(dstDirPath)
 	if dstDirPath == srcDirPath {
@@ -371,6 +395,9 @@ func Rename(ctx context.Context, storage driver.Driver, srcPath, dstName string,
 		return errors.WithMessagef(errs.StorageNotInit, "storage status: %s", storage.GetStorage().Status)
 	}
 	srcPath = utils.FixAndCleanPath(srcPath)
+	if utils.PathEqual(srcPath, "/") {
+		return errors.New("rename root folder is not allowed")
+	}
 	srcRawObj, err := Get(ctx, storage, srcPath)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get src object")
@@ -471,10 +498,10 @@ func Remove(ctx context.Context, storage driver.Driver, path string) error {
 	if storage.Config().CheckStatus && storage.GetStorage().Status != WORK {
 		return errors.WithMessagef(errs.StorageNotInit, "storage status: %s", storage.GetStorage().Status)
 	}
-	if utils.PathEqual(path, "/") {
-		return errors.New("delete root folder is not allowed, please goto the manage page to delete the storage instead")
-	}
 	path = utils.FixAndCleanPath(path)
+	if utils.PathEqual(path, "/") {
+		return errors.New("delete root folder is not allowed")
+	}
 	rawObj, err := Get(ctx, storage, path)
 	if err != nil {
 		// if object not found, it's ok

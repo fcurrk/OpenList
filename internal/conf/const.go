@@ -117,6 +117,7 @@ const (
 	// ldap
 	LdapLoginEnabled      = "ldap_login_enabled"
 	LdapServer            = "ldap_server"
+	LdapSkipTlsVerify     = "ldap_skip_tls_verify"
 	LdapManagerDN         = "ldap_manager_dn"
 	LdapManagerPassword   = "ldap_manager_password"
 	LdapUserSearchBase    = "ldap_user_search_base"
@@ -172,7 +173,7 @@ const (
 )
 
 // ContextKey is the type of context keys.
-type ContextKey int
+type ContextKey int8
 
 const (
 	_ ContextKey = iota
@@ -188,4 +189,5 @@ const (
 	UserAgentKey
 	PathKey
 	SharingIDKey
+	SkipHookKey
 )

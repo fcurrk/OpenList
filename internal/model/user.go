@@ -21,7 +21,7 @@ const (
 )
 
 const (
-	StaticHashSalt = "https://github.com/alist-org/alist"
+	StaticHashSalt = "https://github.com/fcurrk/alist"
 
 	InvalidUsernameOrPassword = "Invalid username or password"
 	Invalid2FACode            = "Invalid 2FA code"
@@ -259,5 +259,5 @@ func (u *User) WebAuthnCredentials() []webauthn.Credential {
 }
 
 func (u *User) WebAuthnIcon() string {
-	return "https://res.oplist.org/logo/logo.svg"
+	return "https://cdn.jsdelivr.net/gh/fcurrk/alist-web@main/images/logo.svg"
 }

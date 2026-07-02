@@ -1,34 +1,19 @@
 name: Release builds
 
-on:
-  release:
-    types: [ published ]
+on: workflow_dispatch
 
 permissions:
   contents: write
 
 jobs:
-  # Set release to prerelease first
-  prerelease:
-    name: Set Prerelease
-    runs-on: ubuntu-latest
-    steps:
-      - name: Prerelease
-        uses: irongut/EditRelease@v1.2.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          id: ${{ github.event.release.id }}
-          prerelease: true
-
-  # Main release job for all platforms
   release:
-    needs: prerelease
+    name: Release ${{ matrix.target-platform && format('{0} ', matrix.target-platform) || '' }}${{ matrix.build-type == 'lite' && 'Lite' || '' }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         build-type: [ 'standard', 'lite' ]
-        target-platform: [ '', 'android', 'freebsd', 'linux_musl', 'linux_musl_arm' ]
-    name: Release ${{ matrix.target-platform && format('{0} ', matrix.target-platform) || '' }}${{ matrix.build-type == 'lite' && 'Lite' || '' }}
-    runs-on: ubuntu-latest
+#        target-platform: [ '', 'android', 'freebsd', 'linux_musl', 'linux_musl_arm' ]
+        target-platform: [ '', 'android', 'linux_musl', 'linux_musl_arm' ]
     steps:
 
       - name: Free Disk Space (Ubuntu)
@@ -70,9 +55,8 @@ jobs:
           FRONTEND_REPO: ${{ vars.FRONTEND_REPO }}
 
       - name: Upload assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          for file in build/compress/*; do
-            gh release upload "${{ github.event.release.tag_name }}" "$file" --clobber
-          done
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/compress/*
+          tag_name: openlist
+

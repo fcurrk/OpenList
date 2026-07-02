@@ -26,8 +26,8 @@ elif [ "$1" = "beta" ]; then
   webVersion="rolling"
 else
   git tag -d beta
-  version="4.2.2.260530"
-  webVersion="4.2.2.260530"
+  version="4.2.3.260702"
+  webVersion="4.2.3.260702"
 fi
 
 echo "backend version: $version"

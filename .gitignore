@@ -1,7 +1,7 @@
 .idea/
 .DS_Store
 output/
-
+/dist/
 
 # Binaries for programs and plugins
 *.exe
@@ -22,12 +22,15 @@ output/
 # vendor/
 /bin/*
 *.json
+!renovate.json
 /build
 /data/
 /tmp/
 /log/
 /lang/
 /daemon/
-/!public/dist/README.md
+/public/dist/*
+!/public/dist/README.md
 
 .VSCodeCounter
+*.syso

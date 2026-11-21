@@ -1,8 +1,6 @@
 name: Release builds
 
-on:
-  release:
-    types: [ published ]
+on: workflow_dispatch
 
 permissions:
   contents: write
@@ -25,7 +23,8 @@ jobs:
     needs: prerelease
     strategy:
       matrix:
-        target-platform: [ '', 'android', 'freebsd', 'linux_musl', 'linux_musl_arm' ]
+        # target-platform: [ '', 'android', 'freebsd', 'linux_musl', 'linux_musl_arm' ]
+        target-platform: [ '', 'android', 'linux_musl', 'linux_musl_arm' ]
     name: Release ${{ matrix.target-platform && format('{0} ', matrix.target-platform) || '' }}
     runs-on: ubuntu-latest
     steps:
@@ -69,9 +68,8 @@ jobs:
           FRONTEND_REPO: ${{ vars.FRONTEND_REPO }}
 
       - name: Upload assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          for file in build/compress/*; do
-            gh release upload "${{ github.event.release.tag_name }}" "$file" --clobber
-          done
+        uses: softprops/action-gh-release@v3
+        with:
+          files: build/compress/*
+          tag_name: openlist
+

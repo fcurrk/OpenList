@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   release:
-    name: Release ${{ matrix.target-platform && format('{0} ', matrix.target-platform) || '' }}${{ matrix.build-type == 'lite' && 'Lite' || '' }}
+    name: Release ${{ matrix.target-platform && format('{0} ', matrix.target-platform) || '' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
